@@ -1,53 +1,41 @@
 <?php
+// generate-ticket.php
 
-// Koneksi ke database
-$servername = "localhost";
-$username = "username";
-$password = "password";
-$dbname = "nama_database";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Cek koneksi
-if ($conn->connect_error) {
-    die("Koneksi gagal: " . $conn->connect_error);
-}
-
-// Fungsi untuk menghasilkan karakter acak
+// Function to generate random alphanumeric string
 function generateRandomString($length = 7) {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $charactersLength = strlen($characters);
     $randomString = '';
     for ($i = 0; $i < $length; $i++) {
-        $randomString .= $characters[rand(0, $charactersLength - 1)];
+        $randomString .= $characters[rand(0, strlen($characters) - 1)];
     }
     return $randomString;
 }
 
-// Menerima input dari command line
-if ($argc !== 3) {
-    echo "Usage: php generate-ticket.php {event_id} {total_ticket}\n";
-    exit(1);
+// Connect to database
+$db_host = 'localhost'; // Change this to your database host
+$db_user = 'root'; // Change this to your database username
+$db_pass = 'password'; // Change this to your database password
+$db_name = 'tickets'; // Change this to your database name
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
+// Get command line arguments
 $event_id = $argv[1];
-$total_ticket = $argv[2];
+$total_tickets = $argv[2];
 
-// Membuat kode tiket
-for ($i = 0; $i < $total_ticket; $i++) {
-    $prefix = 'LCS' . str_pad($event_id, 2, '0', STR_PAD_LEFT);
-    $random_code = generateRandomString();
-    $ticket_code = $prefix . $random_code;
-
-    // Simpan kode tiket ke dalam database
-    $sql = "INSERT INTO ticket_status (ticket_code, status) VALUES ('$ticket_code', 'valid')";
-
-    if ($conn->query($sql) === TRUE) {
-        echo "Kode tiket $ticket_code berhasil disimpan.\n";
-    } else {
-        echo "Error: " . $sql . "<br>" . $conn->error;
-    }
+// Generate and insert tickets into the database
+for ($i = 0; $i < $total_tickets; $i++) {
+    $ticket_code = 'LCS' . str_pad($event_id, 2, '0', STR_PAD_LEFT) . generateRandomString();
+    $sql = "INSERT INTO tickets (event_id, ticket_code, status) VALUES ('$event_id', '$ticket_code', 'available')";
+    $conn->query($sql);
 }
 
+echo "Tickets generated successfully.\n";
+
+// Close database connection
 $conn->close();
 ?>
